@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently --kill-others \"cd server && npm run dev\" \"cd client && npm start\" ",
-    "kill": "kill-port 3000 5000"
+    "installAll": "npm install && (cd server && npm install) && (cd client && npm install)",
+    "start": "concurrently --kill-others \"cd server && npm run dev\" \"cd client && npm start\" ",
+    "kill": "kill-port 3000 5000",
+    "proxy": "http://localhost:5000"
   },
   "keywords": [],
   "author": "",
