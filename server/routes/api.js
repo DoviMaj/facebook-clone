@@ -5,10 +5,6 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const ensureLoggedIn = require("connect-ensure-login").ensureLoggedIn("/");
 
-router.get("/", function (req, res, next) {
-  res.send("Hello from Express");
-});
-
 //  Users can create posts.
 router.post("/users/:id/posts", [
   body("text", "Text can't be empty").not().isEmpty().escape(),
@@ -95,40 +91,86 @@ router.post(
   "/friendRequest/:sentid/:recieverid",
   async function (req, res, next) {
     const { recieverid, sentid } = req.params;
+
     const userRecieving = await User.findById(recieverid);
     const userSending = await User.findById(sentid);
-
-    const checkForDuplicate = (where, who) => {
-      return where.includes(who);
+    const checkForDuplicate = (friendArr, friend) => {
+      return friendArr.includes(friend);
     };
     if (
       checkForDuplicate(userRecieving.friendsRequestsRecieved, sentid) ||
-      checkForDuplicate(userSending.friendsRequestsSent, recieverid)
+      checkForDuplicate(userRecieving.friends, sentid) ||
+      checkForDuplicate(userSending.friendsRequestsSent, recieverid) ||
+      checkForDuplicate(userSending.friends, recieverid)
     ) {
-      return res.status(401).json({ msg: "Not allowed" });
+      return res
+        .status(405)
+        .json({ msg: "Already friends or pending request" });
     }
-    userRecieving.friendsRequestsRecieved = [
-      ...userRecieving.friendsRequestsRecieved,
-      sentid,
-    ];
+    userRecieving.friendsRequestsRecieved.push(sentid);
+    userSending.friendsRequestsSent.push(sentid);
 
-    userSending.friendsRequestsSent = [
-      ...userSending.friendsRequestsSent,
-      sentid,
-    ];
     try {
-      await userSending.save();
-      await userRecieving.save();
+      await userSending.updateOne();
+      await userRecieving.updateOne();
+      res.status(200).json({ userRecieving, userSending });
     } catch (err) {
-      return res.status(404).json(err);
+      res.status(404).json({ err: err });
     }
+  }
+);
 
-    res.status(200).json({ userRecieving, userSending });
+// Accept friend request
+router.post(
+  "/acceptRequest/:sentid/:recieverid",
+  async function (req, res, next) {
+    const { recieverid, sentid } = req.params;
+
+    const userRecieving = await User.findById(recieverid);
+    const userSending = await User.findById(sentid);
+    const checkForNonExistingReq = (friendArr, friend) => {
+      return !friendArr.includes(friend);
+    };
+    const checkForAlreadyFriend = (friendArr, friend) => {
+      return friendArr.includes(friend);
+    };
+    if (
+      checkForNonExistingReq(userRecieving.friendsRequestsRecieved, sentid) ||
+      checkForNonExistingReq(userSending.friendsRequestsSent, recieverid) ||
+      checkForAlreadyFriend(userRecieving.friends, sentid) ||
+      checkForAlreadyFriend(userSending.friends, recieverid)
+    ) {
+      return res
+        .status(405)
+        .json({ msg: "Already friends or pending request" });
+    }
+    // add to frind array
+    userRecieving.friends.push(sentid);
+    // remove from pending request array
+    const newFriendsArr = userRecieving.friendsRequestsRecieved.filter(
+      (friend) => friend.toString() !== sentid
+    );
+    userRecieving.friendsRequestsRecieved = newFriendsArr;
+
+    // add to frind array
+    userSending.friends.push(recieverid);
+    // remove from pending request array
+    const newFriendsArr2 = userSending.friendsRequestsSent.filter(
+      (friend) => friend.toString() !== recieverid
+    );
+    userSending.friendsRequestsSent = newFriendsArr2;
+
+    try {
+      await userSending.updateOne();
+      await userRecieving.updateOne();
+      res.status(200).json({ userRecieving, userSending });
+    } catch (err) {
+      res.status(404).json({ err: err });
+    }
   }
 );
 
 // router.get("/users/:sentid/request/:recieverid", function (req, res, next) {
 //   res.send("Hello from Express");
 // });
-
 module.exports = router;
