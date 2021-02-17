@@ -91,9 +91,41 @@ router.post("/users/:userId/posts/:postId/comments/", [
 ]);
 
 // Send friend request
-router.get("/users/:sentid/request/:recieverid", function (req, res, next) {
-  res.send("Hello from Express");
-});
+router.post(
+  "/friendRequest/:sentid/:recieverid",
+  async function (req, res, next) {
+    const { recieverid, sentid } = req.params;
+    const userRecieving = await User.findById(recieverid);
+    const userSending = await User.findById(sentid);
+
+    const checkForDuplicate = (where, who) => {
+      return where.includes(who);
+    };
+    if (
+      checkForDuplicate(userRecieving.friendsRequestsRecieved, sentid) ||
+      checkForDuplicate(userSending.friendsRequestsSent, recieverid)
+    ) {
+      return res.status(401).json({ msg: "Not allowed" });
+    }
+    userRecieving.friendsRequestsRecieved = [
+      ...userRecieving.friendsRequestsRecieved,
+      sentid,
+    ];
+
+    userSending.friendsRequestsSent = [
+      ...userSending.friendsRequestsSent,
+      sentid,
+    ];
+    try {
+      await userSending.save();
+      await userRecieving.save();
+    } catch (err) {
+      return res.status(404).json(err);
+    }
+
+    res.status(200).json({ userRecieving, userSending });
+  }
+);
 
 // router.get("/users/:sentid/request/:recieverid", function (req, res, next) {
 //   res.send("Hello from Express");
