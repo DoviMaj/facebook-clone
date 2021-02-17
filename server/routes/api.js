@@ -31,22 +31,37 @@ router.post("/users/:id/posts", [
   },
 ]);
 
-// Get users posts || CHANGE FOR TIMELINE
-router.get("/users/:id/posts", async function (req, res, next) {
-  try {
-    const user = await User.findById(req.params.id);
-    if (user !== null) {
-      const posts = await Post.find({ User: req.params.id });
-      if (posts !== null) {
-        // actual success
-        return res.status(200).json({ posts });
-      }
-      return res.status(404).json({ msg: "Posts not found" });
+// Get Single Post
+router.get("/posts/:id", async (req, res) => {
+  const post = await Post.findById(req.params.id)
+    .populate("User", "username picture_url")
+    .populate("comments.User", "username picture_url");
+  res.status(200).json(post);
+});
+
+// Get user TIMELINE
+router.get("/users/:id/timeline", async function (req, res, next) {
+  const user = await User.findById(req.params.id);
+  const userPosts = await Post.find({ User: req.params.id }).sort("-date");
+  if (userPosts !== null) {
+    const friendsPosts = await getFriendsPosts();
+    async function getFriendsPosts() {
+      const jobQueries = [];
+      user.friends.map((friend) => {
+        jobQueries.push(Post.find({ User: friend }).sort("-date"));
+      });
+      const posts = await Promise.all(jobQueries);
+      return posts[0];
     }
-    return res.status(404).json({ msg: "User not found" });
-  } catch (err) {
-    res.status(404).json({ msg: err });
+    if (friendsPosts !== null) {
+      console.log(friendsPosts[0]);
+      const allPosts = userPosts.concat(friendsPosts);
+      const sortedPosts = allPosts.slice().sort((a, b) => b.date - a.date);
+      return res.status(200).json(sortedPosts);
+    }
+    return res.status(200).json(userPosts);
   }
+  return res.status(404).json({ msg: "posts not found" });
 });
 
 // Like Post
@@ -57,7 +72,7 @@ router.post("/posts/:postId/likes/", async (req, res) => {
     { new: true }
   );
   return res.status(200).json({
-    post: `post with id of ${req.params.postId} has now ${post.likes} likes`,
+    msg: `post with id of ${req.params.postId} has now ${post.likes} likes`,
   });
 });
 
@@ -161,9 +176,9 @@ router.post(
     userSending.friendsRequestsSent = newFriendsArr2;
 
     try {
-      await userSending.updateOne();
-      await userRecieving.updateOne();
-      res.status(200).json({ userRecieving, userSending });
+      await userSending.save();
+      await userRecieving.save();
+      res.status(200).json({ msg: "Friend added", userRecieving });
     } catch (err) {
       res.status(404).json({ err: err });
     }
