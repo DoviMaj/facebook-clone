@@ -5,7 +5,7 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const ensureLoggedIn = require("connect-ensure-login").ensureLoggedIn("/");
 
-//  Users can create posts.
+//  Users can create posts. || refactor with req.user!!
 router.post("/users/:id/posts", [
   body("text", "Text can't be empty").not().isEmpty().escape(),
 
@@ -39,7 +39,17 @@ router.get("/posts/:id", async (req, res) => {
   res.status(200).json(post);
 });
 
-// Get user TIMELINE
+// Get User Profile || refactor with req.user!!
+router.get("/:id/profile", async (req, res) => {
+  const user = await User.findById(req.params.id);
+  const userPosts = await Post.find({ User: req.params.id }).sort("-date");
+  if (user === null) {
+    return res.status(404).json({ msg: "user not found" });
+  }
+  res.status(200).json({ user, userPosts });
+});
+
+// Get user TIMELINE  || refactor with req.user!!
 router.get("/users/:id/timeline", async function (req, res, next) {
   const user = await User.findById(req.params.id);
   const userPosts = await Post.find({ User: req.params.id }).sort("-date");
@@ -76,7 +86,7 @@ router.post("/posts/:postId/likes/", async (req, res) => {
   });
 });
 
-// Commment Post
+// Commment Post || refactor with req.user!!
 router.post("/users/:userId/posts/:postId/comments/", [
   body("text", "Text can't be empty").not().isEmpty().escape(),
 
@@ -101,7 +111,7 @@ router.post("/users/:userId/posts/:postId/comments/", [
   },
 ]);
 
-// Send friend request
+// Send friend request || refactor with req.user!!
 router.post(
   "/friendRequest/:sentid/:recieverid",
   async function (req, res, next) {
@@ -184,6 +194,13 @@ router.post(
     }
   }
 );
+
+// Get User
+router.get("/users/:id", async function (req, res, next) {
+  const user = await User.findById(req.params.id);
+  console.log(req.user);
+  res.send("Hello from Express");
+});
 
 // router.get("/users/:sentid/request/:recieverid", function (req, res, next) {
 //   res.send("Hello from Express");
