@@ -31,14 +31,6 @@ router.post("/users/:id/posts", [
   },
 ]);
 
-// Get Single Post
-router.get("/posts/:id", async (req, res) => {
-  const post = await Post.findById(req.params.id)
-    .populate("User", "username picture_url")
-    .populate("comments.User", "username picture_url");
-  res.status(200).json(post);
-});
-
 // Get User Profile || refactor with req.user!!
 router.get("/:id/profile", async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -194,6 +186,11 @@ router.post(
     }
   }
 );
+
+// Unfriend Request || TODO
+router.post("/unfriend/:sentid/:recieverid", function (req, res, next) {
+  res.send("Hello from Express");
+});
 
 // Get User
 router.get("/users/:id", async function (req, res, next) {

@@ -17,7 +17,6 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "../client/build")));
 app.use(
   require("express-session")({
     secret: process.env.SECRET,
@@ -30,11 +29,6 @@ app.use(
 // session.
 app.use(passport.initialize());
 app.use(passport.session());
-
-app.get(
-  "/",
-  express.static(path.join(__dirname, "../client/build/index.html"))
-);
 
 app.get("/test", async (req, res) => {
   res.json({ message: "pass!" });
