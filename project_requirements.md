@@ -1,4 +1,4 @@
-## Todo List
+## Project Requirements
 
 - [x] Users must sign in to see anything except the sign in page.
 - [x] Users should be able to sign in using their real facebook details. This is fairly easily accomplished using PassportJS, and you should be able to use the knowledge you already have to figure it out from the documentation.
