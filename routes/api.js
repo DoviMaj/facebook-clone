@@ -56,7 +56,6 @@ router.get("/users/:id/timeline", async function (req, res, next) {
       return posts[0];
     }
     if (friendsPosts !== null) {
-      console.log(friendsPosts[0]);
       const allPosts = userPosts.concat(friendsPosts);
       const sortedPosts = allPosts.slice().sort((a, b) => b.date - a.date);
       return res.status(200).json(sortedPosts);
@@ -116,13 +115,16 @@ router.post(
     };
     if (
       checkForDuplicate(userRecieving.friendsRequestsRecieved, sentid) ||
+      checkForDuplicate(userSending.friendsRequestsSent, recieverid)
+    ) {
+      return res.status(405).json({ msg: "Pending request" });
+    }
+
+    if (
       checkForDuplicate(userRecieving.friends, sentid) ||
-      checkForDuplicate(userSending.friendsRequestsSent, recieverid) ||
       checkForDuplicate(userSending.friends, recieverid)
     ) {
-      return res
-        .status(405)
-        .json({ msg: "Already friends or pending request" });
+      return res.status(405).json({ msg: "Already friends" });
     }
     userRecieving.friendsRequestsRecieved.push(sentid);
     userSending.friendsRequestsSent.push(sentid);
@@ -153,15 +155,17 @@ router.post(
     };
     if (
       checkForNonExistingReq(userRecieving.friendsRequestsRecieved, sentid) ||
-      checkForNonExistingReq(userSending.friendsRequestsSent, recieverid) ||
+      checkForNonExistingReq(userSending.friendsRequestsSent, recieverid)
+    ) {
+      return res.status(405).json({ msg: "No request found" });
+    }
+    if (
       checkForAlreadyFriend(userRecieving.friends, sentid) ||
       checkForAlreadyFriend(userSending.friends, recieverid)
     ) {
-      return res
-        .status(405)
-        .json({ msg: "Already friends or pending request" });
+      return res.status(405).json({ msg: "Already friends" });
     }
-    // add to frind array
+    // add to friend array
     userRecieving.friends.push(sentid);
     // remove from pending request array
     const newFriendsArr = userRecieving.friendsRequestsRecieved.filter(
@@ -169,7 +173,7 @@ router.post(
     );
     userRecieving.friendsRequestsRecieved = newFriendsArr;
 
-    // add to frind array
+    // add to friend array
     userSending.friends.push(recieverid);
     // remove from pending request array
     const newFriendsArr2 = userSending.friendsRequestsSent.filter(
@@ -189,14 +193,7 @@ router.post(
 
 // Unfriend Request || TODO
 router.post("/unfriend/:sentid/:recieverid", function (req, res, next) {
-  res.send("Hello from Express");
-});
-
-// Get User
-router.get("/users/:id", async function (req, res, next) {
-  const user = await User.findById(req.params.id);
-  console.log(req.user);
-  res.send("Hello from Express");
+  res.json("Hello from Express");
 });
 
 // router.get("/users/:sentid/request/:recieverid", function (req, res, next) {
