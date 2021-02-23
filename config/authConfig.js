@@ -19,13 +19,11 @@ passport.use(
         picture_url: picture.data.url,
         facebookId: profile.id,
       };
-
-      const user = await User.findOne({ facebookId: profile.id });
-
-      if (user !== null) {
-        return done(null, user);
+      let user = await User.findOne({ facebookId: profile.id });
+      if (user === null) {
+        console.log("not a user");
+        user = await User.create(userData);
       }
-      await User.create(userData);
       done(err, user);
     }
   )
