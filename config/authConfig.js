@@ -2,6 +2,7 @@ const User = require("../models/User");
 
 const passport = require("passport"),
   FacebookStrategy = require("passport-facebook").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 passport.use(
   new FacebookStrategy(
@@ -21,21 +22,49 @@ passport.use(
       };
       let user = await User.findOne({ facebookId: profile.id });
       if (user === null) {
-        console.log("not a user");
         user = await User.create(userData);
       }
-      done(err, user);
+      done(null, user);
+    }
+  )
+);
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback",
+    },
+    async function (accessToken, refreshToken, profile, done) {
+      console.log(profile);
+      const { displayName, photos } = profile;
+      const userData = {
+        username: displayName,
+        picture_url: photos[0].value,
+        googleId: profile.id,
+      };
+      let user = await User.findOne({ googleId: profile.id });
+      if (user === null) {
+        user = await User.create(userData);
+      }
+      done(null, user);
     }
   )
 );
 
 passport.serializeUser(function (user, cb) {
-  cb(null, user.id);
+  cb(null, user._id);
 });
 
 passport.deserializeUser(async function (id, cb) {
-  const user = await User.findById(id);
-  cb(null, user);
+  User.findById(id, (err, user) => {
+    if (err) {
+      cb(null, false, { error: err });
+    } else {
+      cb(null, user);
+    }
+  });
 });
 
 module.exports = passport;
