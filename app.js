@@ -38,8 +38,13 @@ app.get("/test", async (req, res) => {
 });
 
 app.get("/session", (req, res) => {
-  if (req.user) {
-    res.status(200).json({ msg: "user authenticated" });
+  console.log(req.user);
+  if (req.isAuthenticated()) {
+    res.status(200).json({
+      success: true,
+      message: "user has successfully authenticated",
+      user: req.user,
+    });
   } else {
     res.status(200).json(null);
   }
