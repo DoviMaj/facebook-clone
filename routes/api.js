@@ -10,13 +10,16 @@ router.post("/posts", [
   body("text", "Text can't be empty").not().isEmpty().escape(),
 
   async function (req, res, next) {
+    console.log("hi");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log(req.body);
       return res.json({
         data: req.body,
         errors: errors.array(),
       });
     }
+
     const { text } = req.body;
     const post = new Post({
       User: req.user._id,
@@ -33,6 +36,7 @@ router.post("/posts", [
 
 // Get User Profile
 router.get("/profile", async (req, res) => {
+  const user = await User.findById(req.user._id);
   const userPosts = await Post.find({ User: req.user._id }).sort("-date");
   if (user === null) {
     return res.status(404).json({ msg: "user not found" });
@@ -43,21 +47,38 @@ router.get("/profile", async (req, res) => {
 // Get user TIMELINE
 router.get("/timeline", async function (req, res, next) {
   const user = await User.findById(req.user._id);
-  const userPosts = await Post.find({ User: req.user._id }).sort("-date");
+  const userPosts = await Post.find({ User: req.user._id })
+    .populate("User")
+    .populate({
+      path: "comments",
+      populate: { path: "User", model: "User" },
+    })
+    .sort({ date: -1 });
   if (userPosts !== null) {
-    const friendsPosts = await getFriendsPosts();
-    async function getFriendsPosts() {
-      const jobQueries = [];
-      user.friends.map((friend) => {
-        jobQueries.push(Post.find({ User: friend }).sort("-date"));
-      });
-      const posts = await Promise.all(jobQueries);
-      return posts[0];
-    }
-    if (friendsPosts !== null) {
-      const allPosts = userPosts.concat(friendsPosts);
-      const sortedPosts = allPosts.slice().sort((a, b) => b.date - a.date);
-      return res.status(200).json(sortedPosts);
+    if (user.friends.length > 0) {
+      const friendsPosts = await getFriendsPosts();
+      async function getFriendsPosts() {
+        const jobQueries = [];
+        user.friends.map((friend) => {
+          jobQueries.push(
+            Post.find({ User: friend })
+              .populate("User")
+              .populate({
+                path: "comments",
+                populate: { path: "User", model: "User" },
+              })
+              .sort({ date: -1 })
+          );
+        });
+        const posts = await Promise.all(jobQueries);
+        return posts[0];
+      }
+      if (friendsPosts) {
+        const allPosts = userPosts.concat(friendsPosts);
+        const sortedPosts = allPosts.slice().sort((a, b) => b.date - a.date);
+        return res.status(200).json(sortedPosts);
+        // return res.status(200).json(allPosts);
+      }
     }
     return res.status(200).json(userPosts);
   }
@@ -94,9 +115,9 @@ router.post("/posts/:postId/comments/", [
     const newComment = { User: req.user._id, text };
     post.comments = [...post.comments, newComment];
     await post.save();
-
+    console.log(post.comments);
     return res.status(200).json({
-      post,
+      comments: post.comments,
     });
   },
 ]);
