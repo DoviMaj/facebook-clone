@@ -44,6 +44,24 @@ router.get("/profile", async (req, res) => {
   res.status(200).json({ user, userPosts });
 });
 
+// Get all non friends users
+router.get("/notFriends", async (req, res) => {
+  console.log(req.user._id);
+  const currentUser = await User.findById(req.user._id);
+  const allUsers = await User.find({});
+
+  const notFriends = allUsers.filter(
+    (user) =>
+      !currentUser.friends.includes(user._id) &&
+      user._id.toString() !== currentUser._id.toString()
+  );
+
+  if (currentUser === null) {
+    return res.status(404).json({ msg: "user not found" });
+  }
+  res.status(200).json(notFriends);
+});
+
 // Get user TIMELINE
 router.get("/timeline", async function (req, res, next) {
   const user = await User.findById(req.user._id);
@@ -90,6 +108,18 @@ router.post("/posts/:postId/likes/", async (req, res) => {
   const post = await Post.findByIdAndUpdate(
     req.params.postId,
     { $inc: { likes: 1 } },
+    { new: true }
+  );
+  return res.status(200).json({
+    msg: `post with id of ${req.params.postId} has now ${post.likes} likes`,
+  });
+});
+
+// Dislike Post
+router.put("/posts/:postId/likes/", async (req, res) => {
+  const post = await Post.findByIdAndUpdate(
+    req.params.postId,
+    { $inc: { likes: -1 } },
     { new: true }
   );
   return res.status(200).json({
