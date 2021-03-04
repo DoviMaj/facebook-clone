@@ -34,6 +34,19 @@ router.post("/posts", [
   },
 ]);
 
+// Delete post
+router.delete("/posts/:id", async (req, res) => {
+  try {
+    await Post.findByIdAndDelete(req.params.id);
+  } catch (err) {
+    res.status(404).json({ msg: "something went wrong" });
+  }
+
+  res
+    .status(200)
+    .json({ msg: `post with id ${req.params._id} deleted succesfully` });
+});
+
 // Get User Profile
 router.get("/profile", async (req, res) => {
   const user = await User.findById(req.user._id);
