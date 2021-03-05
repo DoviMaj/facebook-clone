@@ -7,7 +7,7 @@ const ensureLoggedIn = require("connect-ensure-login").ensureLoggedIn("/");
 
 //  Users can create posts.
 router.post("/posts", [
-  body("text", "Text can't be empty").not().isEmpty().escape(),
+  body("text", "Text can't be empty").not().isEmpty().trim().escape(),
 
   async function (req, res, next) {
     console.log("hi");

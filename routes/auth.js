@@ -10,7 +10,7 @@ router.get(
   "/facebook",
   ensureLoggedOut,
   passport.authenticate("facebook", {
-    authType: "reauthenticate",
+    // authType: "reauthenticate",
     scope: ["email"],
   })
 );
@@ -28,7 +28,7 @@ router.get(
   "/google",
   ensureLoggedOut,
   passport.authenticate("google", {
-    authType: "reauthenticate",
+    // authType: "reauthenticate",
     scope: ["profile"],
   })
 );
