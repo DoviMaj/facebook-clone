@@ -10,7 +10,7 @@ passport.use(
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
       callbackURL: "/auth/facebook/callback",
-      profileFields: ["id", "displayName", "email", "picture"],
+      profileFields: ["id", "displayName", "email", "picture.type(large)"],
     },
     async function (accessToken, refreshToken, profile, done) {
       const { email, name, picture } = profile._json;
