@@ -2,6 +2,7 @@ const express = require("express");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const router = express.Router();
+const mongoose = require("mongoose");
 const { body, validationResult } = require("express-validator");
 const ensureLoggedIn = require("connect-ensure-login").ensureLoggedIn("/");
 
@@ -10,7 +11,6 @@ router.post("/posts", [
   body("text", "Text can't be empty").not().isEmpty().trim().escape(),
 
   async function (req, res, next) {
-    console.log("hi");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log(req.body);
@@ -59,14 +59,18 @@ router.get("/profile", async (req, res) => {
 
 // Get all non friends users
 router.get("/notFriends", async (req, res) => {
-  console.log(req.user._id);
+  console.log(req.user);
   const currentUser = await User.findById(req.user._id);
+
+  console.log(currentUser);
   const allUsers = await User.find({});
 
   const notFriends = allUsers.filter(
     (user) =>
       !currentUser.friends.includes(user._id) &&
-      user._id.toString() !== currentUser._id.toString()
+      user._id.toString() !== currentUser._id.toString() &&
+      !currentUser.friendsRequestsSent.includes(user._id) &&
+      !currentUser.friendsRequestsRecieved.includes(user._id)
   );
 
   if (currentUser === null) {
@@ -168,7 +172,7 @@ router.post("/posts/:postId/comments/", [
 // Send friend request
 router.post("/friendRequest/:recieverid", async function (req, res, next) {
   const { recieverid } = req.params;
-
+  console.log(recieverid, req.user._id);
   const userRecieving = await User.findById(recieverid);
   const userSending = await User.findById(req.user._id);
   const checkForDuplicate = (friendArr, friend) => {
@@ -191,8 +195,8 @@ router.post("/friendRequest/:recieverid", async function (req, res, next) {
   userSending.friendsRequestsSent.push(recieverid);
 
   try {
-    await userSending.updateOne();
-    await userRecieving.updateOne();
+    await userSending.save();
+    await userRecieving.save();
     res.status(200).json({ userRecieving, userSending });
   } catch (err) {
     res.status(404).json({ err: err });
@@ -200,44 +204,29 @@ router.post("/friendRequest/:recieverid", async function (req, res, next) {
 });
 
 // Accept friend request
-router.post("/acceptRequest/:sentid", async function (req, res, next) {
-  const { sentid } = req.params;
+router.post("/acceptRequest/:userSendingId", async function (req, res, next) {
+  const { userSendingId } = req.params;
+  const recievingUserId = req.user._id;
 
-  const userRecieving = await User.findById(req.user._id);
-  const userSending = await User.findById(sentid);
-  const checkForNonExistingReq = (friendArr, friend) => {
-    return !friendArr.includes(friend);
-  };
-  const checkForAlreadyFriend = (friendArr, friend) => {
-    return friendArr.includes(friend);
-  };
-  if (
-    checkForNonExistingReq(userRecieving.friendsRequestsRecieved, sentid) ||
-    checkForNonExistingReq(userSending.friendsRequestsSent, req.user._id)
-  ) {
+  const userRecieving = await User.findById(recievingUserId);
+  const userSending = await User.findById(userSendingId);
+
+  if (!userSending.friendsRequestsSent.includes(recievingUserId)) {
     return res.status(405).json({ msg: "No request found" });
   }
-  if (
-    checkForAlreadyFriend(userRecieving.friends, sentid) ||
-    checkForAlreadyFriend(userSending.friends, req.user._id)
-  ) {
+  if (userSending.friends.includes(req.user._id)) {
     return res.status(405).json({ msg: "Already friends" });
   }
+
   // add to friend array
-  userRecieving.friends.push(sentid);
+  userRecieving.friends.push(userSendingId);
   // remove from pending request array
-  const newFriendsArr = userRecieving.friendsRequestsRecieved.filter(
-    (friend) => friend.toString() !== sentid
-  );
-  userRecieving.friendsRequestsRecieved = newFriendsArr;
+  userRecieving.friendsRequestsRecieved.pull(userSendingId);
 
   // add to friend array
   userSending.friends.push(req.user._id);
   // remove from pending request array
-  const newFriendsArr2 = userSending.friendsRequestsSent.filter(
-    (friend) => friend.toString() !== req.user._id
-  );
-  userSending.friendsRequestsSent = newFriendsArr2;
+  userSending.friendsRequestsSent.pull(recievingUserId);
 
   try {
     await userSending.save();
@@ -248,9 +237,52 @@ router.post("/acceptRequest/:sentid", async function (req, res, next) {
   }
 });
 
-// Unfriend Request || TODO
-router.post("/unfriend/:sentid/:recieverid", function (req, res, next) {
-  res.json("Hello from Express");
+// Unfriend
+router.post("/unfriend/:unfriendId/", async function (req, res, next) {
+  const { unfriendId } = req.params;
+
+  const unfriend = await User.findById(unfriendId);
+  const currentUser = await User.findById(req.user._id);
+
+  currentUser.friends.pull(unfriendId);
+  unfriend.friends.pull(req.user._id);
+
+  try {
+    await unfriend.save();
+    await currentUser.save();
+  } catch (err) {
+    res.status(404).json({ msg: "something went wrong" });
+  }
+  res.json({});
+});
+
+// Remove friend request sent
+router.post("/unrequest/:unrequestId/", async function (req, res, next) {
+  const { unrequestId } = req.params;
+
+  const unrequested = await User.findById(unrequestId);
+  const currentUser = await User.findById(req.user._id);
+
+  unrequested.friendsRequestsRecieved.pull(req.user._id);
+  currentUser.friendsRequestsSent.pull(unrequestId);
+
+  try {
+    await unrequested.save();
+    await currentUser.save();
+    res.status(200).json({ msg: "request removed" });
+  } catch (err) {
+    res.status(404).json({ msg: "something went wrong" });
+    next();
+  }
+});
+
+// get user
+router.get("/me", async (req, res, next) => {
+  const currentUser = await User.findById(req.user._id)
+    .populate("friends")
+    .populate("friendsRequestsSent")
+    .populate("friendsRequestsRecieved");
+  res.status(200).json(currentUser);
 });
 
 module.exports = router;

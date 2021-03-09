@@ -8,6 +8,7 @@ require("dotenv").config();
 require("./config/mongoConfig");
 const cors = require("cors");
 const passport = require("./config/authConfig");
+const User = require("./models/User");
 
 const app = express();
 
@@ -37,13 +38,16 @@ app.get("/test", async (req, res) => {
   res.json({ message: "pass!" });
 });
 
-app.get("/session", (req, res) => {
-  console.log(req.user);
+app.get("/session", async (req, res) => {
   if (req.isAuthenticated()) {
+    const user = await User.findById(req.user._id)
+      .populate("friends")
+      .populate("friendsRequestsSent")
+      .populate("friendsRequestsRecieved");
     res.status(200).json({
       success: true,
       message: "user has successfully authenticated",
-      user: req.user,
+      user: user,
     });
   } else {
     res.status(200).json(null);
