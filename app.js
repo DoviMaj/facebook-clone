@@ -9,8 +9,19 @@ require("./config/mongoConfig");
 const cors = require("cors");
 const passport = require("./config/authConfig");
 const User = require("./models/User");
+const http = require("http");
+const port = process.env.PORT || "5000";
 
 const app = express();
+app.set("port", port);
+const server = http.createServer(app);
+server.listen(port);
+
+const io = require("socket.io")(server);
+
+io.on("connection", (socket) => {
+  console.log("a user connected");
+});
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -33,6 +44,10 @@ app.use(
 // session.
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
 
 app.get("/test", async (req, res) => {
   res.json({ message: "pass!" });
