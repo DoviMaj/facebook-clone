@@ -1,17 +1,13 @@
 const express = require("express");
-const path = require("path");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const router = express.Router();
-const mongoose = require("mongoose");
 const { body, validationResult } = require("express-validator");
-const ensureLoggedIn = require("connect-ensure-login").ensureLoggedIn("/");
 require("dotenv").config();
 const fs = require("fs");
 const AWS = require("aws-sdk");
 const fileType = require("file-type");
 const multiparty = require("multiparty");
-const { FileSystemCredentials } = require("aws-sdk");
 
 // configure the keys for accessing AWS
 AWS.config.update({
