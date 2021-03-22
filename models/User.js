@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-// const bcrypt = require("bcrypt");
 
 const UserSchema = new Schema({
   email: { type: String },
@@ -11,6 +10,18 @@ const UserSchema = new Schema({
   friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
   friendsRequestsSent: [{ type: Schema.Types.ObjectId, ref: "User" }],
   friendsRequestsRecieved: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  chats: [
+    {
+      chat: {
+        type: Schema.Types.ObjectId,
+        ref: "Chat",
+      },
+      to: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    },
+  ],
 });
 
 const User = mongoose.model("User", UserSchema);
