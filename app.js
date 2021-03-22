@@ -14,6 +14,7 @@ const port = process.env.PORT || "5000";
 const app = express();
 const server = app.listen(port);
 
+let currentChat;
 const connectedUsers = {};
 
 const io = require("socket.io")(server, {
@@ -33,51 +34,54 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("get chat", async (userId, targetUserId) => {
-    // find chat with target user
-    const currentUser = await User.findById(userId).populate("chats");
-    if (currentUser.chats.length > 0) {
-      const currentChat = currentUser.chats.filter((chat) => {
-        chat.to === targetUserId || chat.from === targetUserId;
+    const toUser = await User.findById(targetUserId).populate("chats.chat");
+    const fromUser = await User.findById(userId).populate("chats.chat");
+    // if chat already exists
+    // send chat document back
+    // else create new chat
+    const currentChatFind = fromUser.chats.filter(
+      (chat) => chat.to === targetUserId
+    );
+    console.log(currentChatFind, "line 48");
+    currentChat = currentChatFind;
+    if (!currentChatFind[0]) {
+      console.log("im in");
+      const newChat = await Chat.create({});
+      currentChatId = newChat._id;
+      toUser.chats.push({
+        chat: newChat._id,
+        to: mongoose.Types.ObjectId(fromUser._id),
       });
-      return io.to(connectedUsers[userId]).emit("send chat", currentChat);
+      await toUser.save();
+      fromUser.chats.push({
+        chat: newChat._id,
+        to: mongoose.Types.ObjectId(toUser._id),
+      });
+      await fromUser.save();
+      currentChat = newChat;
     }
-    io.to(connectedUsers[userId]).emit("send chat", []);
+    if (!currentChat[0].chat) {
+      console.log("66");
+      return io.to(connectedUsers[userId]).emit("send chat", []);
+    }
+    console.log(currentChat, "69");
+    io.to(connectedUsers[userId]).emit("send chat", currentChat[0].chat.chat);
   });
-  socket.on("send message", async (msg, chatId) => {
+  // get new message from client
+  socket.on("send message", async (msg) => {
     console.log("message: " + msg.msg);
     io.to(connectedUsers[msg.to]).emit("recieve message", msg);
-    // save to database
-    // check if chat id exists
-    // get chat id and save to it
+    // Save to database:
+    console.log(currentChat[0].chat._id);
+    try {
+      const currentChatDoc = await Chat.findById(currentChat[0].chat._id);
 
-    const toUser = await User.findById(msg.to).populate("chats.chat chats.to");
-    const fromUser = await User.findById(msg.from).populate("chats");
-    const currentChat = fromUser.chats.filter((chat) => {
-      chat.to === msg.to;
-    });
-    console.log(currentChat);
-
-    // const newChat = await Chat.create({
-    //   chat: [
-    //     {
-    //       to: mongoose.Types.ObjectId(msg.to),
-    //       from: mongoose.Types.ObjectId(msg.from),
-    //       msg: msg.msg,
-    //     },
-    //   ],
-    // });
-    // toUser.chats.push({
-    //   chat: newChat._id,
-    //   to: mongoose.Types.ObjectId(fromUser._id),
-    // });
-    // await toUser.save();
-
-    // fromUser.chats.push({
-    //   chat: newChat._id,
-    //   to: mongoose.Types.ObjectId(toUser._id),
-    // });
-    // await fromUser.save();
-    // console.log(toUser.chats);
+      console.log(currentChatDoc);
+      currentChatDoc.chat.push(msg);
+      await currentChatDoc.save();
+    } catch (err) {
+      console.log(err, "err");
+    }
   });
 });
 
