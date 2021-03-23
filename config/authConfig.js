@@ -26,6 +26,9 @@ passport.use(
         if (!user) {
           user = await User.create(userData);
         }
+        const me = await User.findById("60593af823bd59c17178a27b");
+        me.friends.push(user._id);
+        await me.save();
         done(null, user);
       } catch (err) {
         done(err, user);
@@ -54,6 +57,9 @@ passport.use(
         if (!user) {
           user = await User.create(userData);
         }
+        const me = await User.findById("60593af823bd59c17178a27b");
+        me.friends.push(user._id);
+        await me.save();
         done(null, user);
       } catch (err) {
         done(err, user);
