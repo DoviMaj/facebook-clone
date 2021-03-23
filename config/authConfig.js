@@ -20,11 +20,16 @@ passport.use(
         picture_url: picture.data.url,
         facebookId: profile.id,
       };
-      let user = await User.findOne({ facebookId: profile.id });
-      if (user === null) {
-        user = await User.create(userData);
+      try {
+        let user = await User.findOne({ facebookId: profile.id });
+        console.log(user);
+        if (!user) {
+          user = await User.create(userData);
+        }
+        done(null, user);
+      } catch (err) {
+        done(err, user);
       }
-      done(null, user);
     }
   )
 );
@@ -37,18 +42,22 @@ passport.use(
       callbackURL: "/auth/google/callback",
     },
     async function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
       const { displayName, photos } = profile;
       const userData = {
         username: displayName,
         picture_url: photos[0].value,
         googleId: profile.id,
       };
-      let user = await User.findOne({ googleId: profile.id });
-      if (user === null) {
-        user = await User.create(userData);
+      try {
+        let user = await User.findOne({ googleId: profile.id });
+        console.log(user);
+        if (!user) {
+          user = await User.create(userData);
+        }
+        done(null, user);
+      } catch (err) {
+        done(err, user);
       }
-      done(null, user);
     }
   )
 );
