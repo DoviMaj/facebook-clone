@@ -9,6 +9,7 @@ require("dotenv").config();
 require("./config/mongoConfig");
 const cors = require("cors");
 const passport = require("./config/authConfig");
+const Chat = require("./models/Chat");
 const User = require("./models/User");
 const port = process.env.PORT || "5000";
 const app = express();
@@ -17,6 +18,7 @@ const server = app.listen(port);
 let currentChat;
 const connectedUsers = {};
 
+// socket setup
 const io = require("socket.io")(server, {
   cors: {
     origin: "http://localhost:3000",
@@ -121,7 +123,6 @@ app.get("/session", async (req, res) => {
       .populate("friends")
       .populate("friendsRequestsSent")
       .populate("friendsRequestsRecieved");
-    // user.friends.length = 0;
     res.status(200).json({
       success: true,
       message: "user has successfully authenticated",
@@ -134,8 +135,6 @@ app.get("/session", async (req, res) => {
 
 const apiRouter = require("./routes/api");
 const authRouter = require("./routes/auth");
-const { UnsupportedMediaType } = require("http-errors");
-const Chat = require("./models/Chat");
 app.use("/api", apiRouter);
 app.use("/auth", authRouter);
 
@@ -154,5 +153,3 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.status(404).json({ error: "Page not found" });
 });
-
-module.exports = app;

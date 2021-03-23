@@ -226,7 +226,6 @@ router.get("/timeline", async function (req, res, next) {
         const allPosts = userPosts.concat(friendsPosts);
         const sortedPosts = allPosts.slice().sort((a, b) => b.date - a.date);
         return res.status(200).json(sortedPosts);
-        // return res.status(200).json(allPosts);
       }
     }
     return res.status(200).json(userPosts);
