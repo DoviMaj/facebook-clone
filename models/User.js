@@ -28,21 +28,6 @@ const UserSchema = new Schema({
   ],
 });
 
-UserSchema.pre("save", function (next) {
-  console.log(
-    this._id,
-    this._id !== "6059381854200dbb9b78b8ad",
-    !this.friends.includes("6059381854200dbb9b78b8ad")
-  );
-  if (
-    this._id !== "6059381854200dbb9b78b8ad" &&
-    !this.friends.includes("6059381854200dbb9b78b8ad")
-  ) {
-    this.friends.push("6059381854200dbb9b78b8ad");
-  }
-  next();
-});
-
 const User = mongoose.model("User", UserSchema);
 
 module.exports = User;
