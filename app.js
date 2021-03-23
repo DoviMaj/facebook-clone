@@ -60,7 +60,7 @@ io.on("connection", async (socket) => {
       await fromUser.save();
       currentChat = newChat;
     }
-    if (!currentChat[0].chat) {
+    if (!currentChat[0]) {
       console.log("66");
       return io.to(connectedUsers[userId]).emit("send chat", []);
     }
@@ -121,6 +121,7 @@ app.get("/session", async (req, res) => {
       .populate("friends")
       .populate("friendsRequestsSent")
       .populate("friendsRequestsRecieved");
+    // user.friends.length = 0;
     res.status(200).json({
       success: true,
       message: "user has successfully authenticated",
