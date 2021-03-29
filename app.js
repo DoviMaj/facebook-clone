@@ -18,15 +18,19 @@ const server = app.listen(port);
 let currentChat;
 const connectedUsers = {};
 
-// socket setup
-const io = require("socket.io")(server, {
+const corsOptions = {
   cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["my-custom-header"],
+    origin: [
+      "http://192.168.43.249:3000",
+      "http://localhost:3000",
+      "http://c7e51b0d14ad.ngrok.io",
+    ],
     credentials: true,
   },
-});
+};
+
+// socket setup
+const io = require("socket.io")(server, corsOptions);
 
 io.on("connection", async (socket) => {
   console.log(socket.id);
@@ -91,7 +95,7 @@ io.on("connection", async (socket) => {
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
