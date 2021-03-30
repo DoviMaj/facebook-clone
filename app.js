@@ -20,7 +20,9 @@ const connectedUsers = {};
 
 const corsOptions = {
   cors: {
-    origin: ["http://localhost:3000", "https://fakebook-client.vercel.app"],
+    origin: function (origin, callback) {
+      callback(null, origin);
+    },
     credentials: true,
   },
 };
@@ -91,7 +93,7 @@ io.on("connection", async (socket) => {
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
-app.use(cors());
+app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
