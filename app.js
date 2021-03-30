@@ -20,11 +20,7 @@ const connectedUsers = {};
 
 const corsOptions = {
   cors: {
-    origin: [
-      "http://192.168.43.249:3000",
-      "http://localhost:3000",
-      "http://c7e51b0d14ad.ngrok.io",
-    ],
+    origin: ["http://localhost:3000", "https://fakebook-client.vercel.app"],
     credentials: true,
   },
 };
