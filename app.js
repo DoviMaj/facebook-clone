@@ -97,12 +97,13 @@ app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// app.use(cookieParser(process.env.SECRET));
 app.use(
   session({
     secret: process.env.SECRET,
     resave: false,
     saveUninitialized: false,
-    sameSite: 'none'
+    cookie: {sameSite: 'none'}
   })
 );
 
