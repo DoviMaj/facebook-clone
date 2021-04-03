@@ -94,12 +94,6 @@ io.on("connection", async (socket) => {
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
-var sessionOptions = {
-  secret: process.env.SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { sameSite: false },
-};
 
 // if (app.get("env") === "production") {
 //   app.set("trust proxy", 1); // trust first proxy
@@ -110,6 +104,12 @@ app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+var sessionOptions = {
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { sameSite: false },
+};
 app.use(session(sessionOptions));
 
 // Initialize Passport and restore authentication state, if any, from the
