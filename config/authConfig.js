@@ -10,7 +10,6 @@ passport.use(
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
       callbackURL: "/auth/facebook/callback",
-      proxy: true,
       profileFields: ["id", "displayName", "email", "picture.type(large)"],
     },
     async function (accessToken, refreshToken, profile, done) {
@@ -40,7 +39,6 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "/auth/google/callback",
-      proxy: true,
     },
     async function (accessToken, refreshToken, profile, done) {
       const { displayName, photos } = profile;

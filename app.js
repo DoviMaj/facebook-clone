@@ -98,13 +98,13 @@ var sessionOptions = {
   secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { sameSite: "none" },
+  cookie: { sameSite: false },
 };
 
-if (app.get("env") === "production") {
-  app.set("trust proxy", 1); // trust first proxy
-  sess.cookie.secure = true; // serve secure cookies
-}
+// if (app.get("env") === "production") {
+//   app.set("trust proxy", 1); // trust first proxy
+//   sess.cookie.secure = true; // serve secure cookies
+// }
 
 app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
