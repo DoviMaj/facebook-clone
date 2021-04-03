@@ -13,6 +13,9 @@ const Chat = require("./models/Chat");
 const User = require("./models/User");
 const port = process.env.PORT || "5000";
 const app = express();
+
+app.set("trust proxy", 1);
+
 const server = app.listen(port);
 
 let currentChat;
@@ -91,25 +94,20 @@ io.on("connection", async (socket) => {
   });
 });
 
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "pug");
-
-// if (app.get("env") === "production") {
-//   app.set("trust proxy", 1); // trust first proxy
-//   sess.cookie.secure = true; // serve secure cookies
-// }
-
 app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-var sessionOptions = {
+const sessionOptions = {
   secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { sameSite: false },
+  cookie: {
+    secure: true,
+    sameSite: "none",
+  },
 };
+
 app.use(session(sessionOptions));
 
 // Initialize Passport and restore authentication state, if any, from the
