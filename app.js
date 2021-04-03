@@ -13,6 +13,7 @@ const Chat = require("./models/Chat");
 const User = require("./models/User");
 const port = process.env.PORT || "5000";
 const app = express();
+const server = app.listen(port);
 
 let currentChat;
 const connectedUsers = {};
@@ -20,81 +21,12 @@ const connectedUsers = {};
 const corsOptions = {
   cors: {
     origin: function (origin, callback) {
+      console.log(origin);
       callback(null, origin);
     },
     credentials: true,
   },
 };
-
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "pug");
-
-app.use(cors(corsOptions.cors));
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser())
-app.use(
-  session({
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {sameSite: 'none', secure: true}
-  })
-);
-
-// Initialize Passport and restore authentication state, if any, from the
-// session.
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
-});
-
-app.get("/test", async (req, res) => {
-  res.json({ message: "pass!" });
-});
-
-app.get("/session", async (req, res) => {
-  if (req.isAuthenticated()) {
-    const user = await User.findById(req.user._id)
-      .populate("friends")
-      .populate("friendsRequestsSent")
-      .populate("friendsRequestsRecieved");
-    res.status(200).json({
-      success: true,
-      message: "user has successfully authenticated",
-      user: user,
-    });
-  } else {
-    res.status(200).json(null);
-  }
-});
-
-const apiRouter = require("./routes/api");
-const authRouter = require("./routes/auth");
-app.use("/api", apiRouter);
-app.use("/auth", authRouter);
-
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
-});
-
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.status(404).json({ error: "Page not found" });
-});
-
-const server = app.listen(port);
 
 // socket setup
 const io = require("socket.io")(server, corsOptions);
@@ -157,4 +89,71 @@ io.on("connection", async (socket) => {
       console.log(err, "err");
     }
   });
+});
+
+// view engine setup
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "pug");
+
+app.use(cors(corsOptions.cors));
+app.use(logger("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { sameSite: false },
+  })
+);
+
+// Initialize Passport and restore authentication state, if any, from the
+// session.
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
+
+app.get("/test", async (req, res) => {
+  res.json({ message: "pass!" });
+});
+
+app.get("/session", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const user = await User.findById(req.user._id)
+      .populate("friends")
+      .populate("friendsRequestsSent")
+      .populate("friendsRequestsRecieved");
+    res.status(200).json({
+      success: true,
+      message: "user has successfully authenticated",
+      user: user,
+    });
+  } else {
+    res.status(200).json(null);
+  }
+});
+
+const apiRouter = require("./routes/api");
+const authRouter = require("./routes/auth");
+app.use("/api", apiRouter);
+app.use("/auth", authRouter);
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.status(404).json({ error: "Page not found" });
 });
