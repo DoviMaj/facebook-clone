@@ -102,11 +102,14 @@ const sessionOptions = {
   secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: {
+};
+
+if (process.env.NODE_ENV === "production") {
+  sessionOptions.cookie = {
     secure: true,
     sameSite: "none",
-  },
-};
+  };
+}
 
 app.use(session(sessionOptions));
 
