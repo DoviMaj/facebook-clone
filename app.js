@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const helmet = require("helmet");
 require("dotenv").config();
 require("./config/mongoConfig");
 const cors = require("cors");
@@ -94,6 +95,7 @@ io.on("connection", async (socket) => {
   });
 });
 
+app.use(helmet());
 app.use(cors(corsOptions.cors));
 app.use(logger("dev"));
 app.use(express.json());
