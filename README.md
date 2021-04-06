@@ -2,7 +2,7 @@
 
 Back-End for Facebook clone project
 
-View Front-End [here](https://github.com/DoviMaj/fakebook-client/)
+Front-End repo lives [here](https://github.com/DoviMaj/fakebook-client/)
 
 # Main features
 
